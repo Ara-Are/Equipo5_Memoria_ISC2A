@@ -1,4 +1,0 @@
-C:/Users/aranz/OneDrive/Escritorio/pruebaR/cmake-build-debug/CMakeFiles/pruebaR.dir
-C:/Users/aranz/OneDrive/Escritorio/pruebaR/cmake-build-debug/CMakeFiles/img.dir
-C:/Users/aranz/OneDrive/Escritorio/pruebaR/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/aranz/OneDrive/Escritorio/pruebaR/cmake-build-debug/CMakeFiles/rebuild_cache.dir
