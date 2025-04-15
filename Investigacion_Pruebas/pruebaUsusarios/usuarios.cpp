@@ -6,7 +6,7 @@ using namespace std;
 
 int top=0;
 
-struct Usuario{
+struct Usuario{		//Datos de cada usuario
 	char nombre[30];
 	int pts;
 };
@@ -34,12 +34,12 @@ int main(){
 
 }
 
-void registro(Usuario usuario[100]){
+void registro(Usuario usuario[100]){	//Registrar un nuevo usuario mientras no se llegue a un limite de usuarios
 	if(top<1000){
 		cout << "\nIntroduce tu nombre: ";
 		cin >> usuario[top].nombre;
 		for(int i=0; i<top; i++){
-			if(strcmp(usuario[top].nombre, usuario[i].nombre) == 0){
+			if(strcmp(usuario[top].nombre, usuario[i].nombre) == 0){	//Compara para que no hayan dos nombres iguales
 				cout << "Ese nombre ya esta registrado, intenta con otro!" << endl;
 				registro(usuario);
 				return;
@@ -55,7 +55,7 @@ void registro(Usuario usuario[100]){
 	
 }
 
-void ranking(Usuario usuario[100]){
+void ranking(Usuario usuario[100]){	//Mostrar el ranking, con nombre del jugador y su puntaje
 	cout << "\nRANKING\n";
 	if(top > 0){
 		cout << endl;
@@ -67,10 +67,5 @@ void ranking(Usuario usuario[100]){
 	}
 	
 }
-
-
-
-
-
 
 
