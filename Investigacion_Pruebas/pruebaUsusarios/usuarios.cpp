@@ -4,7 +4,7 @@
 #include <string.h>
 using namespace std;
 
-int top=0;
+int top=0;	//tope 
 
 struct Usuario{		//Datos de cada usuario
 	char nombre[30];
@@ -45,8 +45,8 @@ void registro(Usuario usuario[100]){	//Registrar un nuevo usuario mientras no se
 				return;
 			}
 		}
-		usuario[top].pts=0;
-		top++;
+		usuario[top].pts=0;	//Los puntos de cada nuevo jugador inician en 0
+		top++;	//Se le suma 1 al tope
 		cout << "\nJugador registrado!\n";
 	}else{
 		cout << "\nNo hay espacio para otro jugador!\n";
