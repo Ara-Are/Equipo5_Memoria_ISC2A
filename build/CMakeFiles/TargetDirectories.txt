@@ -1,0 +1,3 @@
+C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/memoramaRaylib/build/CMakeFiles/memoramaRay.dir
+C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/memoramaRaylib/build/CMakeFiles/edit_cache.dir
+C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/memoramaRaylib/build/CMakeFiles/rebuild_cache.dir
