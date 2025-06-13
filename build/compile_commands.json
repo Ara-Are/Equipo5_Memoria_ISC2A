@@ -1,0 +1,8 @@
+[
+{
+  "directory": "C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/memoramaRaylib/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/memoramaRay.dir/includes_CXX.rsp -g -std=gnu++20 -o CMakeFiles\\memoramaRay.dir\\src\\memorama.cpp.obj -c \"C:\\Users\\RubXA\\OneDrive\\UAA_Programas\\Programacion I\\memoramaRaylib\\src\\memorama.cpp\"",
+  "file": "C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/memoramaRaylib/src/memorama.cpp",
+  "output": "CMakeFiles/memoramaRay.dir/src/memorama.cpp.obj"
+}
+]
