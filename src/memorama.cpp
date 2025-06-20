@@ -7,8 +7,8 @@
 #define MAX 10
 #define IMG 15//cantidad de imagenes
 #define SND 10//cantidad de sonidos
-#define COLUMNAS 1//para tablero
-#define FILAS 2//para tablero
+#define COLUMNAS 6//para tablero
+#define FILAS 4//para tablero
 #define TAM_IMG 500//Tamaño en pixeles de las cartas originalmnete
 const int CANT_PARES = (FILAS*COLUMNAS)/2;//Los pares de cartas que se necesitan
 
@@ -17,7 +17,11 @@ Texture2D imagenes[IMG];
 int SCREEN_WIDTH = 1200;
 int SCREEN_HEIGHT = 680;
 
+int * semilla = (int*)malloc(CANT_PARES*sizeof(int));
+
+int puntuacion=0;
 int pares=0;
+bool machine=false;
 
 int id=1;
 int renglon;
@@ -101,14 +105,15 @@ void registro(Usuarios *usuario);
 void inicioSesion(void);
 
 //-----------------------------------MAIN--------------------------------------------
-int main(void)
+int main()
 {
     InitAudioDevice();//cosas de sonido
     int x=0,y=0,volteadas=0,cordsArriba1[2];//contador para el movimiento en la matriz X y Y
+    semilla[1]=CANT_PARES;
     bool terminado=false;
     Juego tablero[FILAS][COLUMNAS];
     CartasEnTablero cartas[CANT_PARES];
-    srand(time(0));
+    srand(time(nullptr));
     inicializarCartas(cartas);
     llenarTab(tablero, cartas);
 
@@ -192,20 +197,21 @@ int main(void)
             }
         }
         else if (estadoActual == FACIL || estadoActual == DIFICIL) {
-            if ((IsKeyPressed(KEY_W)|| IsKeyPressed(KEY_UP)) && y>0 ) {//en caso de que suba por el tablero
+
+            if (((IsKeyPressed(KEY_W)|| IsKeyPressed(KEY_UP)) && y>0) && !machine ) {//en caso de que suba por el tablero
                 y=y-1;
             }
-            else if ((IsKeyPressed(KEY_S)|| IsKeyPressed(KEY_DOWN)) && y<FILAS-1 ) {//en caso de que baje por el tablero
+            else if ((IsKeyPressed(KEY_S)|| IsKeyPressed(KEY_DOWN)) && y<FILAS-1 && !machine) {//en caso de que baje por el tablero
                 y=y+1;
             }
-            if ((IsKeyPressed(KEY_A)|| IsKeyPressed(KEY_LEFT)) && x>0 ) {//en caso de que  valla a la izquierda
+            else if ((IsKeyPressed(KEY_A)|| IsKeyPressed(KEY_LEFT)) && x>0 && !machine) {//en caso de que  valla a la izquierda
                 x=x-1;
             }
-            else if ((IsKeyPressed(KEY_D)|| IsKeyPressed(KEY_RIGHT)) && x<COLUMNAS-1) {//en caso de que  valla a la derecha
+            else if ((IsKeyPressed(KEY_D)|| IsKeyPressed(KEY_RIGHT)) && x<COLUMNAS-1 && !machine) {//en caso de que  valla a la derecha
                 x=x+1;
             }
-            if (IsKeyPressed(KEY_ENTER) && tablero[y][x].estado == false) {
-                if (volteadas < 2) {
+            else if (IsKeyPressed(KEY_ENTER) && tablero[y][x].estado == false && !machine) {
+                if (volteadas < 2  ) {
                     voltearCarta(tablero, x, y, volteadas, cordsArriba1);
 
                     // Si es la segunda carta
@@ -225,6 +231,38 @@ int main(void)
                             terminado=true;
                             PlaySound(sonido[3]);
                         }
+                        machine = true;
+                    }
+                }
+            }
+            else if(machine && estadoActual == FACIL) {
+                WaitTime(1);
+                srand(time(nullptr));
+                do {
+                    x = rand()%COLUMNAS;
+                    y = rand()%FILAS;
+                }while((x<0 || x>=COLUMNAS) || ( y<0 || y>=FILAS));
+                DrawText(TextFormat("Posicion: %d,%d",x,y),500,10,50,BLACK);
+                if(tablero[y][x].estado == false) {
+                    voltearCarta(tablero, x, y, volteadas, cordsArriba1);
+                    // Si es la segunda carta
+                    if (volteadas == 2) {
+                        // Mostrar ambas cartas volteadas
+                        mostrarMat(tablero, x, y);
+                        EndDrawing();
+
+                        // Pausa antes de evaluar si es o no par
+                        WaitTime(0.1);
+                        BeginDrawing();
+                        dibujarFondoDegradado(BLUE, PINK);
+
+                        evaluarPar(tablero, cordsArriba1, volteadas, pares, x, y);
+                        //Checar si se completo
+                        if (pares == CANT_PARES) {
+                            terminado=true;
+                            PlaySound(sonido[3]);
+                        }
+                        machine = false;
                     }
                 }
             }
@@ -790,10 +828,14 @@ int IdCarta(CartasEnTablero*cartas) {
 }
 //llena el tablero con el id de la carta y la coloca boca abajo
 void llenarTab(Juego tablero[][COLUMNAS], CartasEnTablero cartas[CANT_PARES]) {
+    int k = 1;
     for (int i = 0; i <FILAS; i++) {
         for (int j = 0; j <COLUMNAS; j++) {
-            tablero[i][j].id_Carta =IdCarta(cartas);
+            int id = IdCarta(cartas);
+            semilla[k]=id;
+            tablero[i][j].id_Carta =id;
             tablero[i][j].estado = false;//Volteado
+            k++;
         }
     }
 }
@@ -823,6 +865,7 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
     float inicio_y = (GetScreenHeight() - total_alto) / 2;
 
     DrawText(TextFormat("Pares encontrados: %d/%d",pares,CANT_PARES), inicio_x, inicio_y - 40, 30, BLACK);
+    DrawText(TextFormat("Puntuacion: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
 
     for (int fila = 0; fila < FILAS; fila++) {
         for (int col = 0; col < COLUMNAS; col++) {
@@ -879,10 +922,12 @@ void evaluarPar(Juego tablero[FILAS][COLUMNAS], int cordsArriba1[2], int &voltea
         if (tablero[y][x].id_Carta==tablero[cordsArriba1[1]][cordsArriba1[0]].id_Carta) {
             PlaySound(sonido[2]);
             pares++;
+            if (!machine)puntuacion++;
         }
         else {
+            if (!machine)puntuacion--;
             PlaySound(sonido[0]);
-            WaitTime(.3);
+            WaitTime(0.3);
             tablero[y][x].estado=false;
             tablero[cordsArriba1[1]][cordsArriba1[0]].estado=false;
         }

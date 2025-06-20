@@ -72,7 +72,7 @@
 			[
 				{
 					"backtrace" : 5,
-					"path" : "C:/Users/aranz/OneDrive/Escritorio/memo/raylib-5.5_win64_mingw-w64/include"
+					"path" : "C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/team5Memo/raylib-5.5_win64_mingw-w64/include"
 				}
 			],
 			"language" : "CXX",
@@ -105,7 +105,7 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "-LC:\\Users\\aranz\\OneDrive\\Escritorio\\memo\\raylib-5.5_win64_mingw-w64\\lib",
+				"fragment" : "-L\"C:\\Users\\RubXA\\OneDrive\\UAA_Programas\\Programacion I\\team5Memo\\raylib-5.5_win64_mingw-w64\\lib\"",
 				"role" : "libraryPath"
 			},
 			{
