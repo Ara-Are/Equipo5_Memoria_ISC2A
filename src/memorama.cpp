@@ -55,6 +55,7 @@ int SCREEN_HEIGHT = 680;
 int * semilla = (int*)malloc(CANT_PARES*sizeof(int));
 
 int puntuacion=0;
+int puntuacionMac=0;
 int pares=0;
 bool machine=false;
 
@@ -267,7 +268,6 @@ int main()
                         //Checar si se completo
                         if (pares == CANT_PARES) {
                             terminado=true;
-                            PlaySound(sonido[3]);
                         }
                         machine = true;
                     }
@@ -323,7 +323,13 @@ int main()
             WaitTime(1.0);
             BeginDrawing();
             dibujarFondoDegradado(BLUE, PINK);
-            DrawText("Ganaste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 150, BLACK);
+            if (puntuacion >= puntuacionMac) {
+                DrawText("Ganaste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 150, BLACK);
+                PlaySound(sonido[3]);
+            } else {
+                DrawText("Perdiste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 150, BLACK);
+                PlaySound(sonido[4]);
+            }
             EndDrawing();
             WaitTime(6.0);
             estadoActual = MENUJ;
@@ -921,7 +927,11 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
     float inicio_y = (GetScreenHeight() - total_alto) / 2;
 
     DrawText(TextFormat("Pares encontrados: %d/%d",pares,CANT_PARES), inicio_x, inicio_y - 40, 30, BLACK);
-    DrawText(TextFormat("Puntuacion: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
+    DrawText(TextFormat("Tu - puntuacion: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
+    DrawText(TextFormat("Maquina - Puntuacion: %d",puntuacionMac),inicio_x+800,inicio_y-90,50,BLACK);
+
+
+
 
     for (int fila = 0; fila < FILAS; fila++) {
         for (int col = 0; col < COLUMNAS; col++) {
@@ -936,6 +946,12 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
                 tamano_actual = tamano_base * escala_seleccion;
                 pos_x -= (tamano_actual - tamano_base) / 2;
                 pos_y -= (tamano_actual - tamano_base) / 2;
+                if (machine) {
+                    DrawRectangle(pos_x-2,pos_y-2,tamano_actual+6,tamano_actual+6,GREEN);
+                }
+                else {
+                    DrawRectangle(pos_x-2,pos_y-2,tamano_actual+6,tamano_actual+6,YELLOW);
+                }
             }
 
             // mostrar la imagen correspondiente
@@ -952,6 +968,7 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
                 (Vector2){0, 0},0,WHITE);
         }
     }
+
 }
 
 //Función para voltear la carta(cambia su estado)
@@ -978,10 +995,20 @@ void evaluarPar(Juego tablero[FILAS][COLUMNAS], int cordsArriba1[2], int &voltea
         if (tablero[y][x].id_Carta==tablero[cordsArriba1[1]][cordsArriba1[0]].id_Carta) {
             PlaySound(sonido[2]);
             pares++;
-            if (!machine)puntuacion++;
+            if (!machine){
+                puntuacion+=10;
+            } else {
+                puntuacionMac+=10;
+            }
         }
         else {
-            if (!machine)puntuacion--;
+            if (!machine) {
+                puntuacion-=2;
+                if (puntuacion<0) puntuacion = 0;
+            } else {
+                puntuacionMac-=2;
+                if (puntuacionMac<0) puntuacionMac = 0;
+            }
             PlaySound(sonido[0]);
             WaitTime(0.3);
             tablero[y][x].estado=false;
