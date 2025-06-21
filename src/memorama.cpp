@@ -12,6 +12,41 @@
 #define TAM_IMG 500//Tamaño en pixeles de las cartas originalmnete
 const int CANT_PARES = (FILAS*COLUMNAS)/2;//Los pares de cartas que se necesitan
 
+// -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- //
+// Funciones y structs para el uso de listas doblemente enlazadas
+
+#define type int
+
+typedef struct Element {
+    type data;
+    type x;
+    type y;
+    struct Element *left;
+    struct Element *right;
+} Nodo;
+
+Nodo *ini = nullptr;
+Nodo *end = nullptr;
+
+Nodo *createNode(type, Nodo *, Nodo *,type,type);
+bool isEmpty();
+void displayListLTR();
+void displayListRTL();
+void insertIni(type,type,type);
+void insertEnd(type,type,type);
+void insertSort(type);
+bool exist(type,type,type);
+void borrar(type,type,type);
+void freeList();
+void nextTo(type,type);
+void prevTo(type,type);
+void compactList();
+bool tieneUnElemento();
+
+
+// Funciones y structs para el uso de listas doblemente enlazadas
+// -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- + -- //
+
 Sound sonido[SND];
 Texture2D imagenes[IMG];
 int SCREEN_WIDTH = 1200;
@@ -99,6 +134,9 @@ void llenarTab(Juego[][COLUMNAS], CartasEnTablero*);//asignar el id en el tabler
 void mostrarMat(Juego[][COLUMNAS],int,int);//mostrar la matriz y al usuario
 void voltearCarta(Juego[][COLUMNAS],int,int,int&,int*);
 void evaluarPar(Juego[][COLUMNAS],int*,int&,int&,int,int);
+
+void maquina(Juego[][COLUMNAS],int*,int&,int&,int&,int&,bool&);
+bool buscar(Juego [][COLUMNAS], int &, int*, int&);
 
 //Funciones usuario
 void registro(Usuarios *usuario);
@@ -236,34 +274,18 @@ int main()
                 }
             }
             else if(machine && estadoActual == FACIL) {
-                WaitTime(1);
-                srand(time(nullptr));
-                do {
-                    x = rand()%COLUMNAS;
-                    y = rand()%FILAS;
-                }while((x<0 || x>=COLUMNAS) || ( y<0 || y>=FILAS));
-                DrawText(TextFormat("Posicion: %d,%d",x,y),500,10,50,BLACK);
-                if(tablero[y][x].estado == false) {
-                    voltearCarta(tablero, x, y, volteadas, cordsArriba1);
-                    // Si es la segunda carta
-                    if (volteadas == 2) {
-                        // Mostrar ambas cartas volteadas
-                        mostrarMat(tablero, x, y);
-                        EndDrawing();
+                maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
 
-                        // Pausa antes de evaluar si es o no par
-                        WaitTime(0.1);
-                        BeginDrawing();
-                        dibujarFondoDegradado(BLUE, PINK);
+            }
+            else if(machine && estadoActual == DIFICIL) {
 
-                        evaluarPar(tablero, cordsArriba1, volteadas, pares, x, y);
-                        //Checar si se completo
-                        if (pares == CANT_PARES) {
-                            terminado=true;
-                            PlaySound(sonido[3]);
-                        }
-                        machine = false;
-                    }
+                if(tieneUnElemento() || isEmpty()) {
+                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
+                }
+                if (!buscar(tablero, volteadas, cordsArriba1,pares)) {
+                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
+                } else {
+                    machine=false;
                 }
             }
         }
@@ -429,6 +451,38 @@ void dibujarCargar() {
 
 
 }
+void maquina(Juego tablero[][6], int * cordsArriba1, int &volteadas, int &pares, int &x, int &y, bool& terminado) {
+    WaitTime(1);
+    srand(time(nullptr));
+    do {
+        x = rand()%COLUMNAS;
+        y = rand()%FILAS;
+    }while((x<0 || x>=COLUMNAS) || ( y<0 || y>=FILAS));
+    if(tablero[y][x].estado == false) {
+        voltearCarta(tablero, x, y, volteadas, cordsArriba1);
+        // Si es la segunda carta
+        if (volteadas == 2) {
+            // Mostrar ambas cartas volteadas
+            mostrarMat(tablero, x, y);
+            EndDrawing();
+
+            // Pausa antes de evaluar si es o no par
+            WaitTime(0.1);
+            BeginDrawing();
+            dibujarFondoDegradado(BLUE, PINK);
+
+            evaluarPar(tablero, cordsArriba1, volteadas, pares, x, y);
+            machine = false;
+            //Checar si se completo
+            if (pares == CANT_PARES) {
+                terminado=true;
+                PlaySound(sonido[3]);
+            }
+        }
+    }
+
+}
+
 
 bool IsAnyKeyPressed(){
     bool keyPressed = false;
@@ -467,7 +521,7 @@ void registro(Usuarios *usuario){
         }
 
     const int screenWidth = 800;
-    const int screenHeight = 450;
+
 
 
 
@@ -903,7 +957,7 @@ void voltearCarta(Juego tablero[FILAS][COLUMNAS], int x, int y, int &volteadas, 
     if (tablero[y][x].estado == false && volteadas < 2) {
         PlaySound(sonido[1]);
         tablero[y][x].estado = true;
-
+        insertEnd(tablero[y][x].id_Carta,x,y);
         if (volteadas == 0) {
             cordArriba1[0] = x;//almacenar las anteriores por si al voltear la siguiente es necesario ponerlas boca abajo
             cordArriba1[1] = y;
@@ -935,3 +989,242 @@ void evaluarPar(Juego tablero[FILAS][COLUMNAS], int cordsArriba1[2], int &voltea
         mostrarMat(tablero, x, y);
     }
 }
+
+// =================================================================
+// Funciones para el uso de listas
+
+Nodo *createNode(type data, Nodo *left, Nodo *right, type x, type y) {
+  Nodo *nuevo= NULL;
+  nuevo = (Nodo *)malloc(sizeof(Nodo));
+  nuevo->data = data;
+    nuevo->x=x;
+    nuevo->y=y;
+  nuevo->left = left;
+  nuevo->right = right;
+  return nuevo;
+}
+
+bool isEmpty() {
+  return ini == NULL;
+}
+
+bool tieneUnElemento() {
+    return ini == end;
+}
+
+void displayListLTR() {
+  Nodo *aux = NULL;
+  aux = ini;
+  while (aux != NULL) {
+      printf("%d (%d,%d)", aux->data,aux->x,aux->y);
+    aux = aux->right;
+  }
+}
+
+void displayListRTL() {
+  Nodo *aux = NULL;
+  aux = end;
+  while (aux != NULL) {
+    printf("%d (%d,%d)", aux->data,aux->x,aux->y);
+    aux = aux->left;
+  }
+}
+
+void insertIni(type data, type x, type y) {
+  Nodo *nuevo = createNode(data, NULL, NULL,x,y);
+  if (isEmpty()) {
+    ini = nuevo;
+    end = nuevo;
+  } else {
+    nuevo->right = ini;
+    ini->left = nuevo;
+    ini = nuevo;
+  }
+}
+
+void insertEnd(type data,type x, type y) {
+  Nodo *nuevo = createNode(data, NULL, NULL,x,y);
+  if (isEmpty()) {
+    ini = nuevo;
+    end = nuevo;
+  } else {
+    nuevo->left = end;
+    end->right = nuevo;
+    end = nuevo;
+  }
+}
+
+bool buscar(Juego tablero[FILAS][COLUMNAS], int &volteadas, int cordArriba1[2], int &pares) {
+    Nodo *auxI = NULL, *auxE = NULL;
+    auxI = ini;
+
+    while (auxI!=NULL) {
+        auxE = end;
+        while (auxE != auxI) {
+            if(auxI->data == auxE->data  && (auxI->x != auxE->x || auxI->y != auxE->y)) {
+                voltearCarta(tablero, auxI->x, auxI->y, volteadas, cordArriba1);
+                voltearCarta(tablero, auxE->x, auxE->y, volteadas, cordArriba1);
+                evaluarPar(tablero,cordArriba1,volteadas,pares,auxE->x,auxE->y);
+                freeList();
+                return true;
+            }
+            auxE=auxE->left;
+        }
+        auxI=auxI->right;
+    }
+    return false;
+}
+/*
+void insertSort(type data) {
+  if (isEmpty()) {
+    puts("La lista esta vacia, se anadio como primer elemento");
+    insertIni(data);
+    return;
+  }
+  Nodo *aux = ini;
+  while (aux != NULL) {
+    if (aux->data < data) {
+      if (aux->right == NULL) {
+        insertEnd(data);
+        break;
+      }
+      aux = aux->right;
+    } else if (aux->data > data) {
+      if (aux->left == NULL) {
+        insertIni(data);
+        break;
+      }
+      Nodo *nuevo = createNode(data, NULL, NULL);
+      nuevo->left = aux->left;
+      nuevo->right = aux;
+      aux->left->right = nuevo;
+      aux->left = nuevo;
+      break;
+    }
+  }
+  puts("El elemento fue acomodado");
+}
+*/
+void freeList() {
+  if (!isEmpty()) {
+    while(ini!=NULL) {
+      Nodo *aux = ini;
+      ini = ini->right;
+      printf("Liberandp %d ", aux->data);
+      free(aux);
+    }
+  }
+  end = NULL;
+}
+
+bool exist(type data) {
+  if (isEmpty()) {
+    puts("La lista esta vacia");
+    return false;
+  }
+  Nodo *aux = ini;
+  while (aux != NULL) {
+    if (aux->data == data) {
+      return true;
+    }
+    aux = aux->right;
+  }
+  return false;
+}
+
+void borrar(type data) {
+  if (isEmpty() || !exist(data)) {
+    puts("La lista esta vacia o no existe el elemento");
+    return;
+  }
+  Nodo *aux = ini;
+  while (aux->data != data) {
+    aux = aux->right;
+  }
+  if (aux->data == ini->data) {
+    ini = aux->right;
+    aux->right->left = NULL;
+    free(aux);
+  } else if (aux->data == end->data) {
+    end = aux->left;
+    aux->left->right = NULL;
+    free(aux);
+  } else {
+    aux->left->right = aux->right;
+    aux->right->left = aux->left;
+    free(aux);
+  }
+}
+/*
+void nextTo(type nextData, type searchData ) {
+  if (isEmpty() || !exist(searchData)) {
+    puts("Como la lista esta vacia o no existe el valor para colocar, no se colocara el valor");
+    return;
+  }
+  Nodo *aux = ini;
+  while (aux->data != searchData) {
+    aux = aux->right;
+  }
+  if (aux == end) {
+    insertEnd(nextData);
+    return;
+  }
+  Nodo *nuevo = createNode(nextData, NULL, NULL);
+  aux->right->left = nuevo;
+  nuevo->right = aux->right;
+  nuevo->left = aux;
+  aux->right = nuevo;
+}
+
+void prevTo(type prevData, type searchData ) {
+  if (isEmpty() || !exist(searchData)) {
+    puts("Como la lista esta vacia o no existe el valor para colocar, no se colocara el valor");
+    return;
+  }
+  Nodo *aux = ini;
+  while (aux->data != searchData) {
+    aux = aux->right;
+  }
+  if (aux == ini) {
+    insertIni(prevData);
+    return;
+  }
+  Nodo *nuevo = createNode(prevData, NULL, NULL);
+  aux->left->right = nuevo;
+  nuevo->left = aux->left;
+  nuevo->right = aux;
+  aux->left = nuevo;
+}
+
+void compactList() {
+  if (isEmpty()) {
+    puts("La lista esta vacia, no se puede compactar");
+    return;
+  }
+  Nodo *auxI = ini;
+  while (auxI != end && auxI != NULL) {
+    Nodo *auxE =end;
+    while(auxI != auxE && auxE != NULL) {
+      if (auxI->data == auxE->data) {
+        if (auxE == end) {
+          end = auxE->left;
+          auxE->left->right = NULL;
+          free(auxE);
+          auxE = end;
+          continue;
+        }
+        auxE->left->right = auxE->right;
+        auxE = auxE->left;
+        free(auxE->right->left);
+        auxE->right->left = auxE;
+        continue;
+      }
+      auxE = auxE->left;
+    }
+    auxI = auxI->right;
+  }
+  puts("Lista compactada");
+}
+*/
+// Funciones para el uso de listas
+// =================================================================
