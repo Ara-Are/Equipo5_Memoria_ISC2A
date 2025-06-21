@@ -274,16 +274,16 @@ int main()
                 }
             }
             else if(machine && estadoActual == FACIL) {
-                maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
+                maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);//La función maquia escoge dos cartas aleatoriamentes
 
             }
             else if(machine && estadoActual == DIFICIL) {
 
                 if(tieneUnElemento() || isEmpty()) {
-                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
+                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);//La función maquia escoge dos cartas aleatoriamentes
                 }
-                if (!buscar(tablero, volteadas, cordsArriba1,pares)) {
-                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);
+                if (!buscar(tablero, volteadas, cordsArriba1,pares)) {//La función buscar lo que hace es ya que se voltearon dos cartas iguales, la maquina esoge esa
+                    maquina(tablero, cordsArriba1, volteadas, pares, x, y,terminado);//La función maquia escoge dos cartas aleatoriamentes
                 } else {
                     machine=false;
                 }
@@ -336,6 +336,8 @@ int main()
     liberarTextura();
     liberarSonidos();
     CloseWindow();
+    freeList();
+    free(semilla);
     return 0;
 }
 
@@ -957,7 +959,7 @@ void voltearCarta(Juego tablero[FILAS][COLUMNAS], int x, int y, int &volteadas, 
     if (tablero[y][x].estado == false && volteadas < 2) {
         PlaySound(sonido[1]);
         tablero[y][x].estado = true;
-        insertEnd(tablero[y][x].id_Carta,x,y);
+        insertEnd(tablero[y][x].id_Carta,x,y);//Cada vez que se voleta una carta se alamcena en una lista para que la maquina la usa
         if (volteadas == 0) {
             cordArriba1[0] = x;//almacenar las anteriores por si al voltear la siguiente es necesario ponerlas boca abajo
             cordArriba1[1] = y;
@@ -993,7 +995,7 @@ void evaluarPar(Juego tablero[FILAS][COLUMNAS], int cordsArriba1[2], int &voltea
 // =================================================================
 // Funciones para el uso de listas
 
-Nodo *createNode(type data, Nodo *left, Nodo *right, type x, type y) {
+Nodo *createNode(type data, Nodo *left, Nodo *right, type x, type y) { // Funciona para crear un nuevo nodo para la lista
   Nodo *nuevo= NULL;
   nuevo = (Nodo *)malloc(sizeof(Nodo));
   nuevo->data = data;
@@ -1004,15 +1006,15 @@ Nodo *createNode(type data, Nodo *left, Nodo *right, type x, type y) {
   return nuevo;
 }
 
-bool isEmpty() {
+bool isEmpty() { // funcion para saber si la lista esta vacia
   return ini == NULL;
 }
 
-bool tieneUnElemento() {
+bool tieneUnElemento() { // funciona para saber si la lista solamente tiene un elemento
     return ini == end;
 }
 
-void displayListLTR() {
+void displayListLTR() { //Funcion para mostrar la lista de izuierda a derecha
   Nodo *aux = NULL;
   aux = ini;
   while (aux != NULL) {
@@ -1021,7 +1023,7 @@ void displayListLTR() {
   }
 }
 
-void displayListRTL() {
+void displayListRTL() { //Funcion para mostrar la lista de derecha a izuquierda
   Nodo *aux = NULL;
   aux = end;
   while (aux != NULL) {
@@ -1030,7 +1032,7 @@ void displayListRTL() {
   }
 }
 
-void insertIni(type data, type x, type y) {
+void insertIni(type data, type x, type y) { //Funcion para insertar un elemento en lista al inicio
   Nodo *nuevo = createNode(data, NULL, NULL,x,y);
   if (isEmpty()) {
     ini = nuevo;
@@ -1042,7 +1044,7 @@ void insertIni(type data, type x, type y) {
   }
 }
 
-void insertEnd(type data,type x, type y) {
+void insertEnd(type data,type x, type y) { //Funcion para insertar un elemento en lista al final
   Nodo *nuevo = createNode(data, NULL, NULL,x,y);
   if (isEmpty()) {
     ini = nuevo;
@@ -1061,11 +1063,12 @@ bool buscar(Juego tablero[FILAS][COLUMNAS], int &volteadas, int cordArriba1[2], 
     while (auxI!=NULL) {
         auxE = end;
         while (auxE != auxI) {
-            if(auxI->data == auxE->data  && (auxI->x != auxE->x || auxI->y != auxE->y)) {
+            if(auxI->data == auxE->data  && (auxI->x != auxE->x || auxI->y != auxE->y)) { //Lo que hace esta función es buscar dos cartas que tengan el mismo id pero difertene posicion
+                //En caso de que si la haya encontrado en la lista de cartas voletadas, voltea esas dos cartas automaticamente.
                 voltearCarta(tablero, auxI->x, auxI->y, volteadas, cordArriba1);
                 voltearCarta(tablero, auxE->x, auxE->y, volteadas, cordArriba1);
                 evaluarPar(tablero,cordArriba1,volteadas,pares,auxE->x,auxE->y);
-                freeList();
+                freeList();//Despues libera toda la lista para volver a almacenar cartas nuevas, así evitando volver a voltear cartas que ya se hallan encontrado
                 return true;
             }
             auxE=auxE->left;
@@ -1074,38 +1077,8 @@ bool buscar(Juego tablero[FILAS][COLUMNAS], int &volteadas, int cordArriba1[2], 
     }
     return false;
 }
-/*
-void insertSort(type data) {
-  if (isEmpty()) {
-    puts("La lista esta vacia, se anadio como primer elemento");
-    insertIni(data);
-    return;
-  }
-  Nodo *aux = ini;
-  while (aux != NULL) {
-    if (aux->data < data) {
-      if (aux->right == NULL) {
-        insertEnd(data);
-        break;
-      }
-      aux = aux->right;
-    } else if (aux->data > data) {
-      if (aux->left == NULL) {
-        insertIni(data);
-        break;
-      }
-      Nodo *nuevo = createNode(data, NULL, NULL);
-      nuevo->left = aux->left;
-      nuevo->right = aux;
-      aux->left->right = nuevo;
-      aux->left = nuevo;
-      break;
-    }
-  }
-  puts("El elemento fue acomodado");
-}
-*/
-void freeList() {
+
+void freeList() { // Funcion para liberar todos los elementos de la lista
   if (!isEmpty()) {
     while(ini!=NULL) {
       Nodo *aux = ini;
@@ -1117,114 +1090,7 @@ void freeList() {
   end = NULL;
 }
 
-bool exist(type data) {
-  if (isEmpty()) {
-    puts("La lista esta vacia");
-    return false;
-  }
-  Nodo *aux = ini;
-  while (aux != NULL) {
-    if (aux->data == data) {
-      return true;
-    }
-    aux = aux->right;
-  }
-  return false;
-}
 
-void borrar(type data) {
-  if (isEmpty() || !exist(data)) {
-    puts("La lista esta vacia o no existe el elemento");
-    return;
-  }
-  Nodo *aux = ini;
-  while (aux->data != data) {
-    aux = aux->right;
-  }
-  if (aux->data == ini->data) {
-    ini = aux->right;
-    aux->right->left = NULL;
-    free(aux);
-  } else if (aux->data == end->data) {
-    end = aux->left;
-    aux->left->right = NULL;
-    free(aux);
-  } else {
-    aux->left->right = aux->right;
-    aux->right->left = aux->left;
-    free(aux);
-  }
-}
-/*
-void nextTo(type nextData, type searchData ) {
-  if (isEmpty() || !exist(searchData)) {
-    puts("Como la lista esta vacia o no existe el valor para colocar, no se colocara el valor");
-    return;
-  }
-  Nodo *aux = ini;
-  while (aux->data != searchData) {
-    aux = aux->right;
-  }
-  if (aux == end) {
-    insertEnd(nextData);
-    return;
-  }
-  Nodo *nuevo = createNode(nextData, NULL, NULL);
-  aux->right->left = nuevo;
-  nuevo->right = aux->right;
-  nuevo->left = aux;
-  aux->right = nuevo;
-}
 
-void prevTo(type prevData, type searchData ) {
-  if (isEmpty() || !exist(searchData)) {
-    puts("Como la lista esta vacia o no existe el valor para colocar, no se colocara el valor");
-    return;
-  }
-  Nodo *aux = ini;
-  while (aux->data != searchData) {
-    aux = aux->right;
-  }
-  if (aux == ini) {
-    insertIni(prevData);
-    return;
-  }
-  Nodo *nuevo = createNode(prevData, NULL, NULL);
-  aux->left->right = nuevo;
-  nuevo->left = aux->left;
-  nuevo->right = aux;
-  aux->left = nuevo;
-}
-
-void compactList() {
-  if (isEmpty()) {
-    puts("La lista esta vacia, no se puede compactar");
-    return;
-  }
-  Nodo *auxI = ini;
-  while (auxI != end && auxI != NULL) {
-    Nodo *auxE =end;
-    while(auxI != auxE && auxE != NULL) {
-      if (auxI->data == auxE->data) {
-        if (auxE == end) {
-          end = auxE->left;
-          auxE->left->right = NULL;
-          free(auxE);
-          auxE = end;
-          continue;
-        }
-        auxE->left->right = auxE->right;
-        auxE = auxE->left;
-        free(auxE->right->left);
-        auxE->right->left = auxE;
-        continue;
-      }
-      auxE = auxE->left;
-    }
-    auxI = auxI->right;
-  }
-  puts("Lista compactada");
-}
-*/
 // Funciones para el uso de listas
 // =================================================================
