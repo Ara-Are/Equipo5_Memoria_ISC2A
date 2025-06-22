@@ -324,12 +324,15 @@ int main()
             BeginDrawing();
             dibujarFondoDegradado(BLUE, PINK);
             if (puntuacion >= puntuacionMac) {
-                DrawText("Ganaste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 150, BLACK);
+                DrawText("Ganaste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 170, BLACK);
                 PlaySound(sonido[3]);
             } else {
-                DrawText("Perdiste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 150, BLACK);
+                DrawText("Perdiste", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3, 170, BLACK);
                 PlaySound(sonido[4]);
             }
+            DrawText("Puntos:", (float)SCREEN_WIDTH/3 , (float)SCREEN_HEIGHT/3+155, 110, BLACK);
+            DrawText(TextFormat("Tu: %d",puntuacion), (float)SCREEN_WIDTH/3-210 , (float)SCREEN_HEIGHT/3+375, 85, BLACK);
+            DrawText(TextFormat("Maquina: %d",puntuacionMac), (float)SCREEN_WIDTH/3+360 , (float)SCREEN_HEIGHT/3+375, 85, BLACK);
             EndDrawing();
             WaitTime(6.0);
             estadoActual = MENUJ;
@@ -426,8 +429,7 @@ void dibujarCargar() {
         int tamEl = sizeof(cuadroOpcion) / sizeof(cuadroOpcion[0]);
 
 
-         ClearBackground(RAYWHITE);
-
+        dibujarFondoDegradado(GRAY,BLACK);
 
             if(opcionActual == ELECCION){
                 DrawText("ELIGE ", 300, 20, 40, RED);
@@ -627,7 +629,7 @@ void registro(Usuarios *usuario){
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
-
+            dibujarFondoDegradado(PURPLE, BLUE);
             DrawText("REGISTRO", 300, 20, 40, RED);
 
             DrawText("COLOCA EL MOUSE EN LA CAJA!", 240, 90, 20, GRAY);
@@ -798,8 +800,8 @@ void inicioSesion(){
         else framesCounter = 0;
 
         BeginDrawing();
-
             ClearBackground(RAYWHITE);
+            dibujarFondoDegradado(BLUE, PURPLE);
 
             DrawText("INICIAR SESION", 200, 20, 40, RED);
 
@@ -927,9 +929,13 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
     float inicio_y = (GetScreenHeight() - total_alto) / 2;
 
     DrawText(TextFormat("Pares encontrados: %d/%d",pares,CANT_PARES), inicio_x, inicio_y - 40, 30, BLACK);
-    DrawText(TextFormat("Tu - puntuacion: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
-    DrawText(TextFormat("Maquina - Puntuacion: %d",puntuacionMac),inicio_x+800,inicio_y-90,50,BLACK);
-
+    DrawText(TextFormat("Tu: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
+    DrawText(TextFormat("Maquina: %d",puntuacionMac),inicio_x+900,inicio_y-90,50,BLACK);
+    if(machine) {
+        DrawText(TextFormat("MAQUINA",puntuacionMac),GetScreenWidth()/2,GetScreenHeight()-55,50,BLACK);
+    } else {
+        DrawText(TextFormat("TU",puntuacionMac),GetScreenWidth()/2,GetScreenHeight()-55,50,BLACK);
+    }
 
 
 
