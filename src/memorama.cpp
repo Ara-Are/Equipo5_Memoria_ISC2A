@@ -172,8 +172,8 @@ int main()
         {"Jugar",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 -100, 400, 40},false},
         {"Cargar",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 40, 400, 40},false},
         {"Ranking",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 + 20, 400, 40},false},
-        {"Opciones",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 + 80, 400, 40},false},
-        {"Salir",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 + 140, 400, 40},false},
+        {NULL,{NULL, NULL, NULL, NULL},NULL},
+        {"Salir",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 + 80, 400, 40},false},
     };
     ElementoMenu elementosMenuJuego[] = {
         {"Facil",{(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 -100, 400, 40},false},
