@@ -62,6 +62,9 @@ bool machine=false;
 int id=1;
 int renglon;
 char nom[MAX+1];
+int idActual = 0;
+
+bool sesionIniciada = false;
 
 //--------------------------ESTRUCTURAS------------------------------------
 struct Usuarios{
@@ -108,7 +111,8 @@ typedef enum {
 typedef enum {
     ELECCION,
     REGISTRARSE,
-    INICIAR_SESION
+    INICIAR_SESION,
+    VOLVER
 } Opcion;
 
 Estado estadoActual = MENU;
@@ -143,6 +147,10 @@ bool buscar(Juego [][COLUMNAS], int &, int*, int&);
 void registro(Usuarios *usuario);
 void inicioSesion(void);
 
+//Funcion para el ranking
+bool rankGuardado(Usuarios[], Usuarios);
+
+
 //-----------------------------------MAIN--------------------------------------------
 int main()
 {
@@ -155,6 +163,8 @@ int main()
     srand(time(nullptr));
     inicializarCartas(cartas);
     llenarTab(tablero, cartas);
+
+    Usuarios usuarioR;
 
 
 
@@ -268,6 +278,20 @@ int main()
                         //Checar si se completo
                         if (pares == CANT_PARES) {
                             terminado=true;
+                            FILE *archJugadores = fopen("jugadores.dat", "rb+");
+
+                            //busca el usuario en el archivo y le escibe su puntuacion
+                            rewind(archJugadores);
+                            while(fread(&usuarioR, sizeof(Usuarios), 1, archJugadores)){
+                                if((strcmp (nom, usuarioR.nombre) == 0) && usuarioR.puntos < puntuacion){
+                                    usuarioR.puntos = puntuacion;
+
+                                    fseek(archJugadores, -sizeof(Usuarios), SEEK_CUR);
+                                    fwrite(&usuarioR, sizeof(Usuarios), 1, archJugadores);
+                                }
+                            }
+                            fclose(archJugadores);
+
                         }
                         machine = true;
                     }
@@ -296,10 +320,20 @@ int main()
         if (estadoActual == MENU) {
             dibujarMenu(elementosMenu, elementosTam);
         } else if (estadoActual == JUGAR) {
-            estadoActual=MENUJ;
+            if(sesionIniciada){
+                estadoActual=MENUJ;
+            }else{
+                DrawText("No se ha iniciado seion", 500, 1000, 60, RED);
+                inicioSesion();
+                estadoActual = MENU;
+            }
         } else if (estadoActual == CARGAR) {
             if (opcionActual == ELECCION){
                 dibujarCargar();
+                DrawText("Presiona ENTER para volver", 500, 600, 20, DARKGRAY);
+                if (IsKeyPressed(KEY_ENTER)) {
+                    estadoActual = MENU;
+                }
             } else if (opcionActual == REGISTRARSE){
                  registro(&usuario);
                 opcionActual = ELECCION;
@@ -309,6 +343,10 @@ int main()
             }
         } else if (estadoActual == RANKING) {
             dibujarRanking();
+            DrawText("Presiona ENTER para volver", 500, 600, 20, DARKGRAY);
+            if (IsKeyPressed(KEY_ENTER)) {
+                estadoActual = MENU;
+            }
         } else if (estadoActual == OPCIONES) {
             dibujarOpciones();
         }else if (estadoActual == MENUJ) {
@@ -506,6 +544,7 @@ bool IsAnyKeyPressed(){
 }
 
 
+//funcion para registrar un nuevo usuario
 void registro(Usuarios *usuario){
     memset(usuario, 0, sizeof(Usuarios));
     FILE *archJugadores;
@@ -515,16 +554,19 @@ void registro(Usuarios *usuario){
     bool existe = false, verificado = false, nomExistente = false, terminado = false;
 
 
+    //se abre el archivo como lecura/escritura
     archJugadores = fopen("jugadores.dat", "rb+");
 
     if(archJugadores == NULL){
+        //si no existe, lo crea y lo abre para lectura/escritura
         archJugadores = fopen("jugadores.dat", "wb+");
     }
     bool datosGuardados = false;
 
-
+    //se va hasta el inicio del archivo
     rewind(archJugadores);
         while (fread(&temp, sizeof(Usuarios), 1, archJugadores)) {
+            //se guarda el id, en cada usuario nuevo, el id aumenta en 1
             if (temp.id >= id) {
                 id = temp.id + 1;
             }
@@ -532,19 +574,17 @@ void registro(Usuarios *usuario){
 
     const int screenWidth = 800;
 
-
-
-
     int letras = 0;
 
     Rectangle textBox = { screenWidth/2.0f - 100, 180, 250, 50 };
     bool mouseOnText = false;
 
     int framesCounter = 0;
-    bool ingresoNombre = true;
+    bool ingresoNombre = true;  //variable bool que indica si se esta ingresando el nombre o la contrasena
 
-
+    //mientras no se haya terminado el registro 
     while (!terminado){
+        //si el mouse esta situado en la caja de texto
         if (CheckCollisionPointRec(GetMousePosition(), textBox)) mouseOnText = true;
         else mouseOnText = false;
 
@@ -554,7 +594,9 @@ void registro(Usuarios *usuario){
             int key = GetCharPressed();
 
             while (key > 0){
+                //si se esta presionando una letra y no se ha alcanzado el maximo de caracteres, se escribe el nombre o la contrasena 
                 if ((key >= 32) && (key <= 125) && (letras < MAX)){
+                    //en la posicion letras, se mete el caracter que se este presionando y en la siguiente posicion se escribe el fin de linea
                     if(ingresoNombre){
                         usuario->nombre[letras] = (char)key;
                         usuario->nombre[letras+1] = '\0';
@@ -569,6 +611,7 @@ void registro(Usuarios *usuario){
                 key = GetCharPressed();
             }
 
+            //si se presiona la tecla para borrar, se "actualiza" el nombre y la contrasena, restandoles un elemento y moviendo el fin de linea
             if(IsKeyPressed(KEY_BACKSPACE)){
                 letras--;
                 if (letras < 0) letras = 0;
@@ -582,11 +625,12 @@ void registro(Usuarios *usuario){
             }
 
             if(IsKeyPressed(KEY_ENTER)){
+                //si se presiona enter y se esta ingresando el nombre
                 if (letras > 0 && ingresoNombre) {
                     letras = 0;
-
                     existe = false;
-
+                    
+                    //recorre el archivo para ver si ya existe el nombre 
                     rewind(archJugadores);
                     while(fread(&temp, sizeof(Usuarios), 1, archJugadores)){
                     if(strcmp(temp.nombre, usuario->nombre) == 0){
@@ -597,6 +641,7 @@ void registro(Usuarios *usuario){
                 verificado = true;
 
                 if(!existe){
+                    //si no existe, ingreso nombre se marca como false para que se pueda pasar a escribir la contrasena
                     ingresoNombre = false;
                     nomExistente = false;
                     letras = 0;
@@ -611,31 +656,41 @@ void registro(Usuarios *usuario){
         else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
 
-      if (!ingresoNombre && IsKeyPressed(KEY_ENTER) && letras > 0) {
-        usuario->id = id++;
-        //usuario->renglon = renglon++;
-        fseek(archJugadores, 0, SEEK_END);
-        fwrite(usuario, sizeof(Usuarios), 1, archJugadores);
-        datosGuardados = true;
-        terminado = true;
+        //si se escribio la contrasena y se presiona enter, se guarda la informacion en el archivo
+        if (!ingresoNombre && IsKeyPressed(KEY_ENTER) && letras > 0) {
+            usuario->id = id++;
+            fseek(archJugadores, 0, SEEK_END);
+            fwrite(usuario, sizeof(Usuarios), 1, archJugadores);
+            datosGuardados = true;
+            idActual = usuario->id;
+            terminado = true;   //marca que se termino el registro
 
-    }
+        }
 
 
 
         if (mouseOnText) framesCounter++;
         else framesCounter = 0;
 
-        BeginDrawing();
+        //boton para volver
+        Rectangle botonVolver = {screenWidth/2.0f - 100, 380, 150, 40};
 
+            if(CheckCollisionPointRec(GetMousePosition(), botonVolver)){
+                if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                    fclose(archJugadores);
+                    return;
+                }
+            }
+
+        BeginDrawing();
+            //dibujo del fondo y los mensajes
             ClearBackground(RAYWHITE);
-            dibujarFondoDegradado(PURPLE, BLUE);
+
             DrawText("REGISTRO", 300, 20, 40, RED);
 
             DrawText("COLOCA EL MOUSE EN LA CAJA!", 240, 90, 20, GRAY);
 
             if(ingresoNombre){
-               // DrawText("Ingresa tu nombre de usuario y presiona ENTER", 300, 180, 30, DARKGRAY);
                 DrawText("Nombre: ", 330, 135, 40, BLACK);
             }
             else{
@@ -643,7 +698,7 @@ void registro(Usuarios *usuario){
 
             }
 
-
+            //dibujo de la caja de texto y del texto
             DrawRectangleRec(textBox, LIGHTGRAY);
             if (mouseOnText) DrawRectangleLines((int)textBox.x, (int)textBox.y, (int)textBox.width, (int)textBox.height, RED);
             else DrawRectangleLines((int)textBox.x, (int)textBox.y, (int)textBox.width, (int)textBox.height, DARKGRAY);
@@ -678,21 +733,33 @@ void registro(Usuarios *usuario){
 
 
         if(datosGuardados){
-            strcpy(nom, usuario->nombre);
             terminado = true;
         }
+
+        DrawRectangleRec(botonVolver, LIGHTGRAY);
+        DrawRectangleLines(botonVolver.x, botonVolver.y, botonVolver.width, botonVolver.height, DARKGRAY);
+        DrawText("Volver", botonVolver.x + 10, botonVolver.y + 10, 20, BLACK);
+
 
         EndDrawing();
 
     }
 
+    //se cierra el archivo de texto
      fclose(archJugadores);
 
-    //CloseWindow();
+     if(datosGuardados){
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        DrawText("Sesion Iniciada!", 200, 200, 40, GREEN);
+        WaitTime(3.0);
+        EndDrawing();
+     }
 
 }
 
 
+//funcion para iniciar sesion
 void inicioSesion(){
     FILE *archJugadores;
 
@@ -700,7 +767,7 @@ void inicioSesion(){
     char nomTemp[MAX+1];
     bool existe = false, verificado = false, nomExistente = false, usuarioExiste = false, terminado = false;
 
-
+    //el archivo se abre en modo lectura
     archJugadores = fopen("jugadores.dat", "rb");
 
     if(archJugadores == NULL){
@@ -715,7 +782,6 @@ void inicioSesion(){
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    //InitWindow(screenWidth, screenHeight, "raylib - inicio sesion");
 
     int letras = 0;
 
@@ -723,12 +789,13 @@ void inicioSesion(){
     bool mouseOnText = false;
 
     int framesCounter = 0;
-    bool ingresoNombre = true;
+    bool ingresoNombre = true;  //variable bool que indica si se esta ingresando el nombre o la contrasena
     bool error = false;
 
 
-
+    //mientras no se haya terminado el inicio de sesion 
     while (!terminado){
+        //si el ouse esta situado en la caja de texto
         if (CheckCollisionPointRec(GetMousePosition(), textBox)) mouseOnText = true;
         else mouseOnText = false;
 
@@ -738,8 +805,10 @@ void inicioSesion(){
             int key = GetCharPressed();
 
             while (key > 0){
+                //si se esta presionando una letra y no se ha alcanzado el maximo de caracteres, se ingresa el nombre o la contrasena
                 if ((key >= 32) && (key <= 125) && (letras < MAX)){
                     if(ingresoNombre){
+                        //en la posicion letras, se mete el caracter que se presiono y en la siguiente posicion se escribe el fin de linea
                         nomSesion[letras] = (char)key;
                         nomSesion[letras+1] = '\0';
                     }
@@ -753,6 +822,7 @@ void inicioSesion(){
                 key = GetCharPressed();
             }
 
+            //si se presiona la tecla para borrar, se "actualiza" el nombre o la contrasena, restandoles un elemento y moviendo el fin de linea 
             if(IsKeyPressed(KEY_BACKSPACE)){
                 letras--;
                 if (letras < 0) letras = 0;
@@ -766,16 +836,18 @@ void inicioSesion(){
             }
 
             if(IsKeyPressed(KEY_ENTER)){
+                //si se presiona enter y se esta ingresando el nombre, ingresoNombre se cambia a falso para pasar a ingresar la contrasena
                 if (letras > 0 && ingresoNombre) {
                     letras = 0;
                     ingresoNombre = false;
                 }
                 else{
                     if(letras > 0 && !ingresoNombre){
+                        //si ya se ingreso el nombre busca en el archivo una coincidencia en nombre y contrasena
                         rewind(archJugadores);
                         while(fread(&temp, sizeof(Usuarios), 1, archJugadores)){
                             if(strcmp(temp.nombre, nomSesion) == 0 && strcmp(temp.password, contSesion) == 0){
-                                usuarioExiste = true;
+                                usuarioExiste = true;   //marca si se encontro la coincidencia
                                 break;
                             }
                         }
@@ -783,10 +855,11 @@ void inicioSesion(){
                     if (usuarioExiste) {
                         fclose(archJugadores);
                         strcpy(nom, nomSesion);
-                        terminado = true;
+                        sesionIniciada = true;
+                        terminado = true;   //marca que se termino el inicio de sesion exitosamente 
                     }
                     else {
-                        error = true;
+                        error = true;   //marca que no se encontro la coincidencia
                         ingresoNombre = true;
                         letras = 0;
                      }
@@ -799,16 +872,26 @@ void inicioSesion(){
         if (mouseOnText) framesCounter++;
         else framesCounter = 0;
 
+        //boton para volver
+        Rectangle botonVolver = {screenWidth/2.0f - 100, 380, 150, 40};
+
+            if(CheckCollisionPointRec(GetMousePosition(), botonVolver)){
+                if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)){
+                    fclose(archJugadores);
+                    return;
+                }
+            }
+
         BeginDrawing();
+
+            //dibuja el fondo y los mensajes
             ClearBackground(RAYWHITE);
-            dibujarFondoDegradado(BLUE, PURPLE);
 
             DrawText("INICIAR SESION", 200, 20, 40, RED);
 
             DrawText("COLOCA EL MOUSE EN LA CAJA!", 240, 90, 20, GRAY);
 
             if(ingresoNombre){
-               // DrawText("Ingresa tu nombre de usuario y presiona ENTER", 300, 180, 30, DARKGRAY);
                 DrawText("Nombre: ", 330, 135, 40, BLACK);
             }
             else{
@@ -816,7 +899,7 @@ void inicioSesion(){
 
             }
 
-
+            //dibuja el cuadro de texto
             DrawRectangleRec(textBox, LIGHTGRAY);
             if (mouseOnText) DrawRectangleLines((int)textBox.x, (int)textBox.y, (int)textBox.width, (int)textBox.height, RED);
             else DrawRectangleLines((int)textBox.x, (int)textBox.y, (int)textBox.width, (int)textBox.height, DARKGRAY);
@@ -828,8 +911,8 @@ void inicioSesion(){
                 DrawText(contSesion, (int)textBox.x + 5, (int)textBox.y + 8, 40, MAROON);
             }
 
-            if(error){
-                DrawText("Usuario o contraseña incorrecta!", 150, 400, 20, RED);
+            if(error){      //si no se encontro la coincidencia, muestra el mensaje
+                DrawText("Usuario o contraseña incorrecta!", 150, 600, 20, RED);
             }
 
             DrawText(TextFormat("CARACTERES DISPONIBLES: %i/%i", letras, MAX), 300, 250, 15, DARKGRAY);
@@ -849,20 +932,97 @@ void inicioSesion(){
                   }
             }
 
+            DrawRectangleRec(botonVolver, LIGHTGRAY);
+            DrawRectangleLines(botonVolver.x, botonVolver.y, botonVolver.width, botonVolver.height, DARKGRAY);
+            DrawText("Volver", botonVolver.x + 10, botonVolver.y + 10, 20, BLACK);
 
         EndDrawing();
 
 
     }
 
+    //cierra el archivo
      fclose(archJugadores);
 
-    //CloseWindow();
+     if(sesionIniciada){
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        DrawText("Sesion Iniciada!", 200, 200, 40, GREEN);
+        WaitTime(3.0);
+        EndDrawing();
+     }
+
 }
 
+//funcion para mostrar el ranking
 void dibujarRanking() {
-    DrawText("RANKING",350,280,60,BLACK);
+     FILE* archJugadores = fopen("jugadores.dat", "rb");
+
+    if(archJugadores == NULL){
+        DrawText("No hay jugadores registrados", 400, 200, 60, BLACK);
+    }
+    
+    int cont=0, totalUsuarios=0, freno=0;
+    Usuarios rankUsuarios[5], mayor, usuario;
+    
+    for(int i=0; i<5; i++){
+    	rankUsuarios[i].puntos = -1;
+    	strcpy(rankUsuarios[i].nombre, " ");
+	}
+    
+    //cuenta el total de usuarios guardados
+    while(fread(&usuario, sizeof(Usuarios), 1, archJugadores)){
+    	totalUsuarios++;
+	}
+	
+    //variable que indica cuando dejar de mostrar usuarios
+	if(totalUsuarios < 5){
+		freno = totalUsuarios;
+	}else{
+		freno = 5;
+	}
+	
+    //muestra los usuarios 
+    while(cont < freno){
+    	rewind(archJugadores);
+    	mayor.puntos = 0;
+    	while(fread(&usuario, sizeof(Usuarios), 1, archJugadores)){
+    		if(usuario.puntos >= mayor.puntos && !rankGuardado(rankUsuarios, usuario)){
+    			mayor = usuario;
+			}	
+		}	
+		rankUsuarios[cont] = mayor;
+		cont++;
+	}
+
+    DrawText("RANKING",500,40,60,RED);
+
+    int y=0;
+    char puntosChar[100];
+
+    
+    for(int i=0; i<freno; i++){
+        sprintf(puntosChar, "%d", rankUsuarios[i].puntos);
+
+        y += 100;
+        DrawText(rankUsuarios[i].nombre, 400, y, 70, BLACK);
+        DrawText(".............", 600, y, 55, BLACK);
+        DrawText(puntosChar, 800, y, 70, BLACK);
+	}
+    
+    fclose(archJugadores);
 }
+
+//funcion para evaluar que el nombre todavia no se haya mostrado en el ranking
+bool rankGuardado(Usuarios rankUsuarios[], Usuarios usuario){
+	for(int i=0; i<5; i++){
+		if(strcmp(rankUsuarios[i].nombre, usuario.nombre) == 0){
+			return true;
+		}
+	}
+	return false;	
+}
+
 void dibujarOpciones() {
     DrawText("OPCIONES",350,280,60,BLACK);
 }
