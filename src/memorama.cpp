@@ -67,6 +67,7 @@ int idActual = 0;
 bool sesionIniciada = false;
 bool aiuda=false;
 
+
 //--------------------------ESTRUCTURAS------------------------------------
 struct Usuarios{
     char nombre[MAX+1];
@@ -113,6 +114,7 @@ typedef enum {
     ELECCION,
     REGISTRARSE,
     INICIAR_SESION,
+    CERRAR_SESION,
     VOLVER
 } Opcion;
 
@@ -334,11 +336,12 @@ int main()
             dibujarMenu(elementosMenu, elementosTam);
         } else if (estadoActual == JUGAR) {
             if(sesionIniciada){
-                estadoActual=MENUJ;
+                estadoActual = MENUJ;
             }else{
                 DrawText("No se ha iniciado seion", 500, 1000, 60, RED);
-                inicioSesion();
-                estadoActual = MENU;
+                faltabaSesion = true;
+                estadoActual = CARGAR;
+                opcionActual = ELECCION;
             }
         } else if (estadoActual == CARGAR) {
             if (opcionActual == ELECCION){
@@ -349,10 +352,22 @@ int main()
                 }
             } else if (opcionActual == REGISTRARSE){
                  registro(&usuario);
+                 if(sesionIniciada){                   
+                    estadoActual = MENU;  
+                }
                 opcionActual = ELECCION;
+
             } else if (opcionActual == INICIAR_SESION){
                 inicioSesion();
+                if(sesionIniciada){
+                    estadoActual = MENU;
+                }
                 opcionActual = ELECCION;
+               
+            } else if(opcionActual == CERRAR_SESION){
+                sesionIniciada = false;
+                opcionActual = ELECCION;
+
             }
         } else if (estadoActual == RANKING) {
             dibujarRanking();
@@ -475,8 +490,9 @@ void dibujarCargar() {
         FILE *archJugadores;
         id=0;
         CuadroOpcion cuadroOpcion[] = {
-            {"Registrarse", {(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 100, 200, 20}, false},
-            {"Iniciar Sesion", {(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 60, 200, 20}, false},
+            {"Registrarse", {(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 100, 200, 30}, false},
+            {"Iniciar Sesion", {(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 60, 200, 30}, false},
+            {"Cerrar Sesion", {(float)SCREEN_WIDTH/2 - 100, (float)SCREEN_HEIGHT/2 - 20, 200, 30}, false},
         };
         int tamEl = sizeof(cuadroOpcion) / sizeof(cuadroOpcion[0]);
 
@@ -490,7 +506,7 @@ void dibujarCargar() {
                 for (int i = 0; i < tamEl; i++){
                     cuadroOpcion[i].activo = CheckCollisionPointRec(mouse, cuadroOpcion[i].barrera);
                     DrawRectangleRec(cuadroOpcion[i].barrera, cuadroOpcion[i].activo ? SKYBLUE : LIGHTGRAY);
-                    DrawText(cuadroOpcion[i].texto, cuadroOpcion[i].barrera.x + 10, cuadroOpcion[i].barrera.y + 2, 18, BLACK);
+                    DrawText(cuadroOpcion[i].texto, cuadroOpcion[i].barrera.x + 10, cuadroOpcion[i].barrera.y + 2, 20, BLACK);
                 }
 
                 for (int i = 0; i < tamEl; i++){
@@ -499,20 +515,17 @@ void dibujarCargar() {
                                 opcionActual = REGISTRARSE;
                             }else if (i == 1){
                                 opcionActual = INICIAR_SESION;
+                            }else if (i == 2){
+                                opcionActual = CERRAR_SESION;
                             }
 
                         }
                 }
             }
-            else if(opcionActual == REGISTRARSE){
-
-            } else if(opcionActual == INICIAR_SESION){
-
-            }
-
-
+           
 
 }
+
 void maquina(Juego tablero[][6], int * cordsArriba1, int &volteadas, int &pares, int &x, int &y, bool& terminado) {
     WaitTime(1);
     srand(time(nullptr));
@@ -579,6 +592,7 @@ void registro(Usuarios *usuario){
 
     //se va hasta el inicio del archivo
     rewind(archJugadores);
+        //recorre el archivo para "posicionar" el id
         while (fread(&temp, sizeof(Usuarios), 1, archJugadores)) {
             //se guarda el id, en cada usuario nuevo, el id aumenta en 1
             if (temp.id >= id) {
@@ -725,7 +739,7 @@ void registro(Usuarios *usuario){
             }
 
             if(nomExistente){
-                DrawText("Este nombre ya está registrado. Intenta con otro!", 150, 400, 20, RED);
+                DrawText("Este nombre ya está registrado. Intenta con otro!", 150, 350, 20, RED);
             }
 
             DrawText(TextFormat("CARACTERES DISPONIBLES: %i/%i", letras, MAX), 300, 250, 15, DARKGRAY);
@@ -748,6 +762,7 @@ void registro(Usuarios *usuario){
 
         if(datosGuardados){
             terminado = true;
+            sesionIniciada = true;
         }
 
         DrawRectangleRec(botonVolver, LIGHTGRAY);
@@ -926,7 +941,7 @@ void inicioSesion(){
             }
 
             if(error){      //si no se encontro la coincidencia, muestra el mensaje
-                DrawText("Usuario o contraseña incorrecta!", 150, 600, 20, RED);
+                DrawText("Usuario o contraseña incorrecta!", 150, 350, 20, RED);
             }
 
             DrawText(TextFormat("CARACTERES DISPONIBLES: %i/%i", letras, MAX), 300, 250, 15, DARKGRAY);
