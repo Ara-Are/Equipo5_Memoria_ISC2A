@@ -339,7 +339,6 @@ int main()
                 estadoActual = MENUJ;
             }else{
                 DrawText("No se ha iniciado seion", 500, 1000, 60, RED);
-                faltabaSesion = true;
                 estadoActual = CARGAR;
                 opcionActual = ELECCION;
             }
