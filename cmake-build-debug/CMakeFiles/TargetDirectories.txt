@@ -1,3 +1,0 @@
-C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/team5Memo/cmake-build-debug/CMakeFiles/memoramaRay.dir
-C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/team5Memo/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/RubXA/OneDrive/UAA_Programas/Programacion I/team5Memo/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -65,6 +65,7 @@ char nom[MAX+1];
 int idActual = 0;
 
 bool sesionIniciada = false;
+bool aiuda=false;
 
 //--------------------------ESTRUCTURAS------------------------------------
 struct Usuarios{
@@ -130,9 +131,11 @@ void liberarSonidos();
 void dibujarMenu(ElementoMenu *, int);
 void dibujarCargar();
 void dibujarRanking();
-void dibujarOpciones();
+
+void dibujarInstrucciones();//pantalla de instrucciones
 
 //Funciones para el funcionamiento del tablero
+void reiniciarPtsTab(CartasEnTablero*,Juego[][COLUMNAS],int&,int&,int&,bool&);//para reiniciar lo que se necesita para jugar
 void inicializarCartas(CartasEnTablero*);//Para asignar las cartas en aleatorio
 int IdCarta(CartasEnTablero*);//Verificar si ese id aleatorio no se repita mas de una vez
 void llenarTab(Juego[][COLUMNAS], CartasEnTablero*);//asignar el id en el tablero
@@ -160,9 +163,6 @@ int main()
     bool terminado=false;
     Juego tablero[FILAS][COLUMNAS];
     CartasEnTablero cartas[CANT_PARES];
-    srand(time(nullptr));
-    inicializarCartas(cartas);
-    llenarTab(tablero, cartas);
 
     Usuarios usuarioR;
 
@@ -234,8 +234,10 @@ int main()
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                         if (i == 0) {
                             estadoActual = FACIL;
+                            reiniciarPtsTab(cartas,tablero,x,y,volteadas,terminado);
                         } else if (i == 1) {
                             estadoActual = DIFICIL;
+                            reiniciarPtsTab(cartas,tablero,x,y,volteadas,terminado);
                         } else if (i == 2) {
                             estadoActual = MENU;
                         }
@@ -258,6 +260,17 @@ int main()
             }
             else if ((IsKeyPressed(KEY_D)|| IsKeyPressed(KEY_RIGHT)) && x<COLUMNAS-1 && !machine) {//en caso de que  valla a la derecha
                 x=x+1;
+            }
+            else if (IsKeyPressed(KEY_I)) {//para ver instrucciones
+                if (!aiuda) {
+                    aiuda=true;
+                }
+                else {
+                    aiuda=false;
+                }
+            }
+            else if (IsKeyPressed(KEY_BACKSPACE)) {//Para salir del juego estando jugando
+                estadoActual = MENUJ;
             }
             else if (IsKeyPressed(KEY_ENTER) && tablero[y][x].estado == false && !machine) {
                 if (volteadas < 2  ) {
@@ -347,13 +360,14 @@ int main()
             if (IsKeyPressed(KEY_ENTER)) {
                 estadoActual = MENU;
             }
-        } else if (estadoActual == OPCIONES) {
-            dibujarOpciones();
         }else if (estadoActual == MENUJ) {
             dibujarMenu(elementosMenuJuego, elementosTamJuego);
         }
         if(estadoActual==FACIL || estadoActual==DIFICIL) {
             mostrarMat(tablero, x, y);//mostrar la matriz/tablero y al usuario
+            if (aiuda) {
+                dibujarInstrucciones();
+            }
         }
         EndDrawing();
 
@@ -467,7 +481,7 @@ void dibujarCargar() {
         int tamEl = sizeof(cuadroOpcion) / sizeof(cuadroOpcion[0]);
 
 
-        dibujarFondoDegradado(GRAY,BLACK);
+        dibujarFondoDegradado(BLUE,PURPLE);
 
             if(opcionActual == ELECCION){
                 DrawText("ELIGE ", 300, 20, 40, RED);
@@ -684,11 +698,11 @@ void registro(Usuarios *usuario){
 
         BeginDrawing();
             //dibujo del fondo y los mensajes
-            ClearBackground(RAYWHITE);
+        dibujarFondoDegradado(BLUE,PURPLE);
 
-            DrawText("REGISTRO", 300, 20, 40, RED);
+        DrawText("REGISTRO", 300, 20, 40, RED);
 
-            DrawText("COLOCA EL MOUSE EN LA CAJA!", 240, 90, 20, GRAY);
+        DrawText("COLOCA EL MOUSE EN LA CAJA!", 240, 90, 20, GRAY);
 
             if(ingresoNombre){
                 DrawText("Nombre: ", 330, 135, 40, BLACK);
@@ -885,7 +899,7 @@ void inicioSesion(){
         BeginDrawing();
 
             //dibuja el fondo y los mensajes
-            ClearBackground(RAYWHITE);
+            dibujarFondoDegradado(BLUE,PURPLE);
 
             DrawText("INICIAR SESION", 200, 20, 40, RED);
 
@@ -1012,6 +1026,30 @@ void dibujarRanking() {
     
     fclose(archJugadores);
 }
+ void dibujarInstrucciones() {
+    int anchoRectangulo = SCREEN_WIDTH / 2.5f;    // Un poco más ancho que 1/3
+    int altoRectangulo = SCREEN_HEIGHT / 2;
+    int posXRectangulo = (SCREEN_WIDTH - anchoRectangulo) / 2;
+    int posYRectangulo = (SCREEN_HEIGHT - altoRectangulo) / 2;
+    int tamanoLetra = SCREEN_HEIGHT / 35;         // Un poco más pequeño
+
+    // Dibujar rectángulo centrado
+    DrawRectangle(posXRectangulo, posYRectangulo, anchoRectangulo, altoRectangulo, BLUE);
+
+    // Margenes y espaciado (10% de margen interno)
+    float margenInterno = anchoRectangulo * 0.1f;
+    float posXTexto = posXRectangulo + margenInterno;
+    float posYTexto = posYRectangulo + margenInterno;
+    float espacioLineas = tamanoLetra * 1.5f;
+
+    // Textos ajustados para que quepan
+    DrawText("Moverse con flechas o WASD", posXTexto, posYTexto, tamanoLetra, BLACK);
+    DrawText("Enter: voltear carta", posXTexto, posYTexto + espacioLineas, tamanoLetra, BLACK);
+    DrawText("Backspace: salir del juego", posXTexto, posYTexto + espacioLineas * 2, tamanoLetra, BLACK);
+    DrawText("Tecla I: cerrar esta ventana", posXTexto, posYTexto + espacioLineas * 4, tamanoLetra, BLACK);
+    DrawText("Abajo indica de quien es el turno", posXTexto, posYTexto + espacioLineas * 3, tamanoLetra, BLACK);
+ }
+
 
 //funcion para evaluar que el nombre todavia no se haya mostrado en el ranking
 bool rankGuardado(Usuarios rankUsuarios[], Usuarios usuario){
@@ -1023,11 +1061,23 @@ bool rankGuardado(Usuarios rankUsuarios[], Usuarios usuario){
 	return false;	
 }
 
-void dibujarOpciones() {
-    DrawText("OPCIONES",350,280,60,BLACK);
-}
 
 //Funciones para el tablero de memorama--------------------------------
+
+//función para reiniciar las variables y otras cosas para poder iniciar un juego desde 0
+void reiniciarPtsTab(CartasEnTablero*cartas, Juego tablero[][COLUMNAS],int &x, int&y, int &volteadas,bool&terminado) {
+    srand(time(nullptr));
+    inicializarCartas(cartas);
+    llenarTab(tablero, cartas);
+    puntuacion=0;
+    puntuacionMac=0;
+    pares=0;
+    machine=false;
+    volteadas=0;
+    x=0;
+    y=0;
+    terminado=false;
+}
 //Función para guardar en un vector los id a usar de las cartas y su disponibilidad para la hora de asignar en tablero
 void inicializarCartas(CartasEnTablero*cartas) {
     for (int i = 0; i < (CANT_PARES); i++) {
@@ -1089,6 +1139,7 @@ void mostrarMat(Juego tablero[][COLUMNAS],int x,int y) {
     float inicio_y = (GetScreenHeight() - total_alto) / 2;
 
     DrawText(TextFormat("Pares encontrados: %d/%d",pares,CANT_PARES), inicio_x, inicio_y - 40, 30, BLACK);
+    DrawText("Presiona I por ayuda", inicio_x+650, inicio_y - 40, 30, BLACK);
     DrawText(TextFormat("Tu: %d",puntuacion),inicio_x,inicio_y-90,50,BLACK);
     DrawText(TextFormat("Maquina: %d",puntuacionMac),inicio_x+900,inicio_y-90,50,BLACK);
     if(machine) {
